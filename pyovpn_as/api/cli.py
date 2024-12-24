@@ -341,6 +341,17 @@ class RemoteSacli:
         """
         self._RpcClient.AutoGenerateOnBehalfOf(user)
     
+    def GetAutologin(self, user: str) -> str:
+        """Generate an autologin client record for a specific user
+
+        The user passed does not have to exist, and essentially amounts to
+        generating a certificate for a common name equal to the username passed
+
+        Args:
+            user (str): The user to create the client record for
+        """
+        return self._RpcClient.GetAutologin(user)
+
     def RevokeCert(self, cn: str) -> None:
         """Revoke a client certificate
 

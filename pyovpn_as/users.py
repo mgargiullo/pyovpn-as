@@ -227,6 +227,42 @@ class UserOperations(ProfileOperations):
             logger.debug(f'Fetching created profile for return...')
             return self.get_user(username)
 
+    @utils.debug_log_call()
+    def create_autologin_client_for_user(self, user: Union[str, UserProfile]) -> str:
+        """Creates a new client record for a given user, or raises an error if
+        one exists
+
+        Args:
+            user (Union[str, UserProfile]): User to generate the client for
+
+        Raises:
+            AccessServerClientExistsError: A client record for the given user
+                already exists
+        """
+        username = str(user)
+
+        # 1. Verify we are creating a client for an existing user
+        self.get_user(username)
+
+        # 2. Check if there is already an existing client
+        existing_clients = self._sacli.EnumClients()
+        if username in existing_clients:
+            raise exceptions.AccessServerClientExistsError(
+                f'Client record already exists for "{username}"'
+            )
+
+        # 3. Create client config and validate it exists
+        # self._sacli.AutoGenerateOnBehalfOf(username)
+        config = self._sacli.GetAutologin(username)
+        new_existing_clients = self._sacli.EnumClients()
+        username_check = str(username) + "_AUTOLOGIN"
+        if username not in new_existing_clients and username_check not in new_existing_clients:
+            raise exceptions.AccessServerClientCreateError(
+                f'Creation of client record for "{username}" failed for an '
+                'unknown reason. New client not present on server despite no '
+                'returned error'
+            )
+        return str(config)
 
     @utils.debug_log_call()
     def create_client_for_user(self, user: Union[str, UserProfile]) -> None:
